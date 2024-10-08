@@ -1,6 +1,5 @@
 """ Address Model """
 from django.db import models
-from typing import Dict
 
 
 class AddressModel(models.Model):
@@ -19,7 +18,7 @@ class AddressModel(models.Model):
         verbose_name = 'address'
         verbose_name_plural = 'addresses'
 
-    def __str__(self) -> Dict[str, str]:
+    def __str__(self) -> str:
         """ String representation """
         return f"Parroquia: {self.parroquia}"
 

@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'src.address',
     'src.anomalos',
     'src.equipment',
+    'src.levels',
+    'src.agronomicos',
     'rest_framework',
 ]
 

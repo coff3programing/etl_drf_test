@@ -24,4 +24,6 @@ urlpatterns = [
     path('', include('src.address.urls')),
     path('', include('src.anomalos.urls')),
     path('', include('src.equipment.urls')),
+    path('levels/', include('src.levels.urls')),
+    path('agronomicos/', include('src.agronomicos.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

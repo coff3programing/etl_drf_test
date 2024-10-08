@@ -16,25 +16,26 @@ class UpladExcelView(APIView):
     def get(self, request, parroquia_name: None):
         """ List Addresses """
         if parroquia_name:
-            try:
-                parroquias = AddressModel.objects.get(parroquia=parroquia_name)
-                serializer = AddressSerializer(parroquias)
+            # Filtramos las parroquias por nombre
+            parroquias = AddressModel.objects.filter(parroquia=parroquia_name)
+            # Comprobamos si el QuerySet está vacío
+            if not parroquias.exists():
+                # Lanzamos un error 404 si no se encuentra la parroquia
                 return Response(
-                  {
+                    {
+                        'status': 404,
+                        'message': 'Parroquia no encontrada'
+                    }, status=status.HTTP_404_NOT_FOUND
+                )
+            serializer = AddressSerializer(parroquias, many=True)
+            return Response(
+                {
                     'status': 200,
                     'data': serializer.data
-                  },
-                  status=status.HTTP_200_OK
-                )
-            except AddressModel.DoesNotExist:
-                return Response(
-                  {
-                    'status': 404,
-                    'data': "Parroquia Not found"
-                  }, status=status.HTTP_404_NOT_FOUND
-                )
+                }, status=status.HTTP_200_OK
+            )
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
         """ Upload File """
         serializer = UploadFileSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -43,16 +44,40 @@ class UpladExcelView(APIView):
 
         # * DF Polars
         df = pl.read_excel(file_path, engine="openpyxl")
-        df.drop_nulls()
-        df.unique()
 
-        # * Llenando la DB
-        for record in df.rows(named=True):
+        # Columnas requeridas
+        required_columns = ['Provincia', 'Canton', 'Parroquia']
+        # Verifica si todas las columnas requeridas están presentes en el DF
+        missing_columns = [
+            col for col in required_columns if col not in df.columns
+        ]
+        if missing_columns:
+            # Si faltan columnas, devuelve un error con las columnas que faltan
+            return Response(
+                {
+                    "error": "Faltan las siguientes columnas",
+                    "columns": missing_columns
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # filtra el DataFrame por las columnas requeridas
+        df_filtered = df.select(required_columns)
+        # 1. Eliminar valores nulos
+        df_filtered = df_filtered.drop_nulls()
+        # 2. Eliminar duplicados
+        df_filtered = df_filtered.unique()
+
+        # 3 Cargar registros en la base de datos
+        def add_data(record):
+            """ Add Data """
             AddressModel.objects.create(
                 provincia=record['Provincia'],
                 canton=record['Canton'],
                 parroquia=record['Parroquia']
             )
+
+        # 4 Llenando la DB con map
+        list(map(add_data, df.rows(named=True)))
 
         return Response(
             {

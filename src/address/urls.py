@@ -8,10 +8,10 @@ router = DefaultRouter()
 router.register(r'address', AddressViewSet)
 router.register(r'teams', TeamsViewSet)
 
-PATH: str = "address"
+URL: str = "address"
 
 urlpatterns = [
     path('', include(router.urls)),
-    path(f'{PATH}/upload_excel/', UpladExcelView.as_view()),
-    path(f'{PATH}/parroquia/<str:parroquia_name>', UpladExcelView.as_view())
+    path(f'{URL}/upload_excel/', UpladExcelView.as_view()),
+    path(f'{URL}/parroquia/<str:parroquia_name>', UpladExcelView.as_view())
 ]
